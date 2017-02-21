@@ -155,8 +155,21 @@ function TweenPool:anim( start, target, length, ease, update, callback, ... )
 	return twn
 end
 
-function TweenPool:remove( twn )
-	table.insert( self._toremove, twn )
+function TweenPool:remove( twn, updatemode )
+	if twn then
+		table.insert( self._toremove, twn )
+		if updatemode then
+			twn:callback( twn.args and unpack( twn.args ))
+			if updatemode == tween.STOP then
+				twn:update( twn.target )
+			elseif updatemode == tween.RESET then
+				twn:update( twn.start )
+			end
+		end
+		return true
+	else
+		return false
+	end
 end
 
 function TweenPool:contains( twn )
@@ -181,18 +194,16 @@ function TweenPool:flush()
 	end
 end
 
-function TweenPool:update( dt )
+function TweenPool:update( clock )
 	self:flush()
 	
-	self._clock = self._clock + dt
-
-	local currentclock = self._clock
+	self._clock = clock
 
 	local tweens = self._tweens
 	for i = 1, #tweens do
 		local twn = tweens[i] 
 		local startclock = twn.startclock
-		local t, b, c, d = currentclock - startclock, twn.start, twn.target - twn.start, twn.length
+		local t, b, c, d = clock - startclock, twn.start, twn.target - twn.start, twn.length
 		
 		if t >= d then
 			twn:update( twn.target )
@@ -203,11 +214,11 @@ function TweenPool:update( dt )
 			end
 
 			if mode == tween.PONG then
-				twn.clock = currentclock
+				twn.clock = clock
 				twn.target, twn.start = twn.start, twn.target
 
 			elseif mode == tween.LOOP then
-				twn.startclock = currentclock
+				twn.startclock = clock
 
 			else
 				if mode == tween.RESET then
