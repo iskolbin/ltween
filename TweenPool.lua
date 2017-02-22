@@ -1,8 +1,8 @@
 --[[
 
- tween -- v0.2.6 public domain Lua tweening library
+ tween -- v0.2.8 public domain Lua tweening library
  no warranty implied; use at your own risk
- 
+
  author: Ilya Kolbin (iskolbin@gmail.com)
  url: github.com/iskolbin/timer
 
@@ -40,7 +40,7 @@ local TweenPool = {
 	OUT = function( t, b, c, d ) local t1 = t / d; return -c * t1 * (t1 - 2) + b end,
 
 	-- quadratic easing in/out - acceleration until halfway, then deceleration
-	IN_OUT = function( t, b, c, d ) 
+	IN_OUT = function( t, b, c, d )
 		t = 2 * t / d
 		if t < 1 then return 0.5 * c * t * t + b end
 		t = t - 1
@@ -51,10 +51,10 @@ local TweenPool = {
 	IN_3 = function( t, b, c, d ) local t1 = t / d; return c * t1 * t1 * t1 + b end,
 
 	-- cubic easing out - decelerating to zero velocity
-	OUT_3 = function( t, b, c, d ) local t1 = t / d; local t2 = t - 1; return c * ( t2 * t2 * t2  + 1) + b end,
+	OUT_3 = function( t, b, c, d ) local t1 = t / d; local t2 = t1 - 1; return c * ( t2 * t2 * t2  + 1) + b end,
 
 	-- cubic easing in/out - acceleration until halfway, then deceleration
-	IN_OUT_3 = function( t, b, c, d ) 
+	IN_OUT_3 = function( t, b, c, d )
 		t = 2 * t / d
 		if (t < 1) then return 0.5 * c * t * t * t + b end
 		t = t - 2
@@ -77,7 +77,7 @@ local TweenPool = {
 	OUT_EXP = function( t, b, c, d )  return c * ( -2 ^ (-10 * t/d ) + 1 ) + b end,
 
 	-- exponential easing in/out - accelerating until halfway, then decelerating
-	IN_OUT_EXP = function( t, b, c, d ) 
+	IN_OUT_EXP = function( t, b, c, d )
 		t = 2 * t / d
 		if t < 1 then return 0.5 * c * 2 ^ (10 * (t - 1) ) + b end
 		t = t - 1
@@ -88,10 +88,10 @@ local TweenPool = {
 	IN_CIR = function( t, b, c, d )  local t1 = t / d; return -c * (sqrt( 1 - t1 * t1 ) - 1) + b end,
 
 	-- circular easing out - decelerating to zero velocity
-	OUT_CIR = function( t, b, c, d ) local t1 = t / d; local t2 = t - 1; return c * sqrt( 1 - t2 * t2 ) + b end,
+	OUT_CIR = function( t, b, c, d ) local t1 = t / d; local t2 = t1 - 1; return c * sqrt( 1 - t2 * t2 ) + b end,
 
 	-- circular easing in/out - acceleration until halfway, then deceleration
-	IN_OUT_CIR = function( t, b, c, d ) 
+	IN_OUT_CIR = function( t, b, c, d )
 		t = 2 * t / d
 		if t < 1 then return -0.5 * c * ( sqrt(1 - t * t) - 1 ) + b end
 		t = t - 2
@@ -113,8 +113,6 @@ function TweenPool.RESET() return TweenPool.RESET end -- Call update function wi
 function TweenPool.PONG() return TweenPool.PONG end	-- Loop from end to start, from start to end and so forth
 function TweenPool.LOOP() return TweenPool.LOOP end	-- Loop from start to end, reseting each time
 
-local TweenPool = {}
-
 TweenPool.__index = TweenPool
 
 function TweenPool.new( clock )
@@ -132,33 +130,33 @@ function TweenPool:anim( start, target, length, ease, update, callback, ... )
 	if not ease then return false, TweenPool.ERROR_BAD_EASING end
 	if not update then return false, TweenPool.ERROR_BAD_UPDATER end
 
-	local twn = {}
-	twn.start = start
-	twn.target = target
-	twn.length = length
-	twn.update = update 
-	twn.ease = ease
-	twn.callback = callback
-	twn.args = callback and ( select('#',...) > 0 and {...} )
+	local tween = {}
+	tween.start = start
+	tween.target = target
+	tween.length = length
+	tween.update = update
+	tween.ease = ease
+	tween.callback = callback
+	tween.args = callback and ( select('#',...) > 0 and {...} )
 	
 	local index = #self._tweens + 1
-	twn.startclock = self._clock
-	twn.index = index
+	tween.startclock = self._clock
+	tween.index = index
 	
-	self._tweens[index] = twn
+	self._tweens[index] = tween
 
-	return twn
+	return tween
 end
 
-function TweenPool:remove( twn, updatemode )
-	if twn then
-		table.insert( self._toremove, twn )
+function TweenPool:remove( tween, updatemode )
+	if tween then
+		table.insert( self._toremove, tween )
 		if updatemode then
-			twn:callback( twn.args and unpack( twn.args ))
-			if updatemode == tween.STOP then
-				twn:update( twn.target )
-			elseif updatemode == tween.RESET then
-				twn:update( twn.start )
+			tween:callback( tween.args and unpack( tween.args ))
+			if updatemode == TweenPool.STOP then
+				tween:update( tween.target )
+			elseif updatemode == TweenPool.RESET then
+				tween:update( tween.start )
 			end
 		end
 		return true
@@ -167,17 +165,17 @@ function TweenPool:remove( twn, updatemode )
 	end
 end
 
-function TweenPool:contains( twn )
-	return twn and self._tweens[twn.index] == twn
+function TweenPool:contains( tween )
+	return tween and self._tweens[tween.index] == tween
 end
 
 function TweenPool:flush()
 	local tweens = self._tweens
 	local toremove = self._toremove
 	for i = 1, #toremove do
-		local twn = toremove[i]
-		local index = twn.index
-		if tweens[index] == twn then
+		local tween = toremove[i]
+		local index = tween.index
+		if tweens[index] == tween then
 			local n = #tweens
 			if index ~= n then
 				tweens[index] = tweens[n]
@@ -196,33 +194,33 @@ function TweenPool:update( clock )
 
 	local tweens = self._tweens
 	for i = 1, #tweens do
-		local twn = tweens[i] 
-		local startclock = twn.startclock
-		local t, b, c, d = clock - startclock, twn.start, twn.target - twn.start, twn.length
+		local tween = tweens[i]
+		local startclock = tween.startclock
+		local t, b, c, d = clock - startclock, tween.start, tween.target - tween.start, tween.length
 		
 		if t >= d then
-			twn:update( twn.target )
+			tween:update( tween.target )
 
 			local mode
-			if twn.callback then
-				mode = twn:callback( twn.args and unpack( twn.args ))
+			if tween.callback then
+				mode = tween:callback( tween.args and unpack( tween.args ))
 			end
 
-			if mode == tween.PONG then
-				twn.clock = clock
-				twn.target, twn.start = twn.start, twn.target
+			if mode == TweenPool.PONG then
+				tween.clock = clock
+				tween.target, tween.start = tween.start, tween.target
 
-			elseif mode == tween.LOOP then
-				twn.startclock = clock
+			elseif mode == TweenPool.LOOP then
+				tween.startclock = clock
 
 			else
-				if mode == tween.RESET then
-					twn:update( twn.start )
+				if mode == TweenPool.RESET then
+					tween:update( tween.start )
 				end
-				self:remove( twn )
+				self:remove( tween )
 			end
 		else
-			twn:update( twn.ease( t, b, c, d ))
+			tween:update( tween.ease( t, b, c, d ))
 		end
 	end
 end
@@ -230,10 +228,12 @@ end
 function TweenPool:reset( clock )
 	self:flush()
 
+	local tweens = self._tweens
 	local dt = clock - self._clock
 	self._clock = clock
 
-	for i = 1, #tween do
+	for i = 1, #tweens do
+		local tween = tweens[i]
 		tween.startclock = tween.startclock + dt
 	end
 end
