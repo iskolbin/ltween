@@ -1,8 +1,8 @@
 ![Build Status](https://travis-ci.org/iskolbin/tween.svg?branch=master)
 [![license](https://img.shields.io/badge/license-public%20domain-blue.svg)]()
 
-Tween
-=====
+Lua tween
+=========
 
 Lua tweening library. Provides `TweenPool` class to manage tweening animations.
 
